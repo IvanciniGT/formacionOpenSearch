@@ -75,6 +75,7 @@ Esto da un patrón característico del uso de RAM en las apps JAVA (y que veremo
 - Una vez la app está en uso normal, veremos las gráficas de memoria y parecerán la hoja de un cuchillo... subidas y bajadas constantes en el uso de RAM. ESO ES PERFECTO! Eso es lo que se espera de una app JAVA.
 
 Se van creando datos de trabajo... y se quedan ahí acumulados como basura... Cuando hay mucha, el garbage collector libera esa RAM.
+
       /|  /|  /|
      / | / | / |
     /  |/  |/  |
@@ -267,7 +268,7 @@ La infra, hoy en día la trato como si fuera código (Infrastructure as Code - I
 # Opensearch.
 
 La gente de Opensearch nos ofrecen 2/3 formas de desplegar Opensearch en kubernetes:
-- Plantilla de despliegue (CHART) oficial de Opensearch.
+* Plantilla de despliegue (CHART) oficial de Opensearch.
   Esta plantilla nos permite definir un entorno de producción básico de Opensearch en un lenguaje muy similar al de kubernetes (YAML).
 
     PRODUCTO: Un cluster de Opensearch en kubernetes

@@ -1,0 +1,147 @@
+# YAML es un lenguaje para estructurar datos. Similar en concepto a lo que pueden ser XML o JSON.
+# Se ha puesto muy de moda (Docker, Kubernetes, Ansible, Github Actions/Gitlab CI/CD, Spring, Red Ubuntu)
+# y es muy probable que lo encuentres en muchos sitios.
+# Es más, se ha comido a JSON... literalmente. La Spec 1.2 de YAML se creó de forma que incluyera JSON como un subconjunto válido de YAML.
+# Dicho de otra forma: Cualquier documento JSON es también un documento YAML válido (99% de las veces).
+# En YAML podemos poner comentarios. Aleluya!
+# Dentro de un fichero YAML podemos tener muchos documentos YAML!
+# En otros lenguajes habitualmente 1 fichero == 1 documento.
+# Cada documento va precedido por --- (tres guiones) = Marca inicio de documento.
+# Esa marca se pone en todos los documentos que incluya el fichero, excepto en el primero.
+---
+#  1 documento YAML = 1 Nodo de datos
+# Hay 2 tipos / familias de nodos= Escalares y Colección
+# Escalares: Solo albergan 1 valor (dato)
+
+# Números
+3
+---
+-5
+---
+2.98
+---
+# Booleanos
+true # True TRUE
+---
+false # False FALSE
+# Nota.. en versión 1.1 de YAML se admitía: On Off, Yes, No... y variantes mayusculas/minúsculas
+# Si veís eso, lo cambiais immediatamente (ANSIBLE)
+---
+# Textos (Más complejo de YAML)
+Hola
+
+, "so\\y 'un \ntexto de #YAML
+---
+"Hola
+
+, \"so\\y 'un texto \nde #YAML"
+# La contrabarra solo escapa entre comillas dobles
+# \n \t \r \\ \"
+---
+'Hola
+, "so\\y ''un texto de #YAML'
+
+---
+# Siempre usamos la sintaxis sin comillas para textos de una linea. Es lo recomendado en YAML
+# Solo en casos donde nos plantee dificultades usaremos comillas.
+# Símbolo de # dentro del texto (comentarios)
+# El texto "true" o el texto "33"
+
+# Si tengo textos de más de 1 línea, YAML nos ofgrece otras 2 sintaxis para textos:
+# Literal
+|2+
+  Hola
+  Yo soy un textoQue se procesará literalmente
+      Con saltos de línea y   espacios en blanco
+          Tal cual los escribo
+  Si tengo caracteres raros, no pasa nada: " ' # \ \\ : 
+
+
+---
+# Folded
+>
+     docker container create
+      --name mi_contenedor
+      -p 8080:80
+      -e VAR1=valor1
+      -e VAR2=valor2
+      -v /mi/ruta:/datos
+      mi_imagen:latest
+# Opera como literal en el sentido de no tocar ni un caracter raro
+# Pero los saltos de línea se convierten en espacios.
+# Nos va ideal para comandos largos
+---
+# Hay más nodos escalares: nulos, fechas, binarios... pero no los veremos aquí.
+
+# Nodos de colección: Vemos 2 tipos: Listas ordenadas y Mapas desordenados
+
+# Lista ordenada: Conjunto ORDENADO de nodos (de cualquier tipo)
+- Nodo1
+- 33
+- true
+-  # Una lista como item de otra lista
+  - Subnodo1
+  - Subnodo2
+-  # A YAML no le importa el número de espacios en blanco que use... SOLO ME EXIGE SER CONSISTENTE EN CADA NIVEL
+      - SubnodoA
+      - SubnodoB
+-     - SubnodoA
+      - SubnodoB
+
+# Hay una sintaxios alternativa para listas:
+---
+- item1
+- 33 
+- true
+---
+[item1, 33, true, [subitem1, subitem2, [subsubitemA, subsubitemB]]]
+# Esta sintaxis también es VALIDA y TOTALMNETE DESACONSEJADA . NO LA USAMOS! Ya que: 
+# 1. Yaml está pensado para seres humanos.... No para máquinas.. Y eso cuesta leerlo... LO DE MENOS
+# 2. LO MAS IMPORTANTE: El fichero irá a GIT... Y git detecta cambios línea a línea...
+#  Si todo está en 1 línea, GIT no puede detectar cambios parciales... Y eso es MUY MALO.
+# Solo está para compatibilidad con JSON.
+# Solo hay un caso legítimo de uso de esta sintaxis: Lista vacia:
+---
+[]
+---
+["item1", 33, true]
+---
+
+# Mapas desordenados: Conjunto DESORDENADO de datos, donde cada dato va identificado por una clave: Conjunto de pares clave:valor
+
+clave1: valor1
+clave2: 33
+clave3: true
+clave4:
+  - subvalor1
+  - subvalor2
+clave5:
+  subclaveA: subvalorA
+  subclaveB: subvalorB
+
+# Nota: Hay una sintaxis alternativa para mapas desordenados:
+---
+{clave1: valor1, clave2: 33, clave3: true}
+# Esta sintaxis también es VALIDA y TOTALMNETE DESACONSEJADA . NO LA USAMOS! Ya que: 
+# 1. Yaml está pensado para seres humanos.... No para máquinas.. Y eso cuesta leerlo... LO DE MENOS
+# 2. LO MAS IMPORTANTE: El fichero irá a GIT... Y git detecta cambios línea a línea...
+#  Si todo está en 1 línea, GIT no puede detectar cambios parciales... Y eso es MUY MALO.
+# Solo está para compatibilidad con JSON.
+# Solo hay un caso legítimo de uso de esta sintaxis: Mapa vacio:
+---
+{}
+---
+
+# Y hasta aqui YAML. Hay mucho más que no os cuento.
+
+# YAML solo me da una sintaxis BASE para estructurar datos.
+# Cada aplciación que usa YAML como lenguaje para definir sus datos, define LA ESTRUCTURA DE DATOS EXACTA QUE NECESITA: 
+# A eso se le denomina un ESQUEMA YAML (YAML SCHEMA)
+
+# Cada aplicación define su propio esquema YAML.
+# Docker compose es un ESQUEMA YAML
+
+# El esquema es lo que define la estructura del documento (el documento debe ser un mapa desordenado con claves concretas... cuyos valores sean de unos tipos concretos... etc)
+# Kubernetes define su propio esquema YAML
+# Ansible define su propio esquema YAML
+# Github Actions define su propio esquema YAML

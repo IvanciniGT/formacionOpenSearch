@@ -1,0 +1,228 @@
+apiVersion: opensearch.opster.io/v1
+kind: OpenSearchCluster
+metadata:
+  annotations:
+    meta.helm.sh/release-name: opensearch
+    meta.helm.sh/release-namespace: default
+  name: opensearch-bi
+  namespace: qa-cicd-opensearch-pro
+  labels:
+    app: opensearch
+    ted-tenant: qa-cicd
+    tedial.com/ecosystem: opensearch
+    tedial.com/tenant: qa-cicd
+    ted-ecosystem: opensearch
+    ted-appname: opensearch
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io_part-of: opensearch
+    tedial.com/environment: qa-cicd-pro
+    ted-environment: pro
+spec:
+  bootstrap:
+    resources: {}
+  confMgmt:
+    smartScaler: true
+  dashboards:
+    enable: true
+    resources:
+      limits:
+        cpu: 200m    # Subirlo a 8 cores!
+        memory: 512M
+      requests:
+        cpu: 50m
+        memory: 204M # Subirlo a los 512
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: node.tedial.com/class
+                  operator: In
+                  values:
+                    - infrastructure
+                - key: node.tedial.com/class
+                  operator: NotIn
+                  values:
+                    - mediaservices
+                - key: node.tedial.com/environment
+                  operator: In
+                  values:
+                    - qa-cicd-pro
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution: # Prefered
+          - labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                    - opensearch-bi-dashboards
+            topologyKey: kubernetes.io/hostname
+    additionalConfig:
+      opensearch_security.cookie.secure: 'false'
+      opensearchDashboards.branding.logo.darkModeUrl: /ui/assets/3.0.3.bi.svg
+      opensearchDashboards.branding.mark.darkModeUrl: /ui/assets/3.0.3.bi.svg
+      opensearchDashboards.branding.loadingLogo.defaultUrl: /ui/assets/3.0.3.bi.svg
+      opensearch_security.readonly_mode.roles: '[kibana_read_only]'
+      opensearch_security.multitenancy.enable_filter: 'false'
+      opensearchDashboards.branding.faviconUrl: /ui/assets/3.0.3.bi.svg
+      opensearch.username: kibanaserver
+      opensearch_security.multitenancy.tenants.enable_private: 'true'
+      opensearch.requestHeadersAllowlist: '["Authorization", "securitytenant"]'
+      opensearch_security.auth.multiple_auth_enabled: 'true'
+      opensearch_security.multitenancy.tenants.enable_global: 'true'
+      opensearch_security.jwt.url_param: jwtToken
+      opensearch_security.multitenancy.tenants.preferred: '["Private", "Global"]'
+      opensearch.password: kibanaserver
+      opensearchDashboards.branding.mark.defaultUrl: /ui/assets/3.0.3.bi.svg
+      opensearch_security.jwt.enabled: 'true'
+      opensearchDashboards.branding.loadingLogo.darkModeUrl: /ui/assets/3.0.3.bi.svg
+      opensearch_security.multitenancy.enabled: 'true'
+      opensearchDashboards.branding.logo.defaultUrl: /ui/assets/3.0.3.bi.svg
+      opensearch.ssl.verificationMode: none
+      opensearchDashboards.branding.applicationTitle: Business Intelligence
+      opensearch_security.auth.type: BasicAuth
+    additionalVolumes:
+      - configMap:
+          name: branding-config-3-0-2
+        name: branding-config-3-0-2
+        path: /usr/share/opensearch-dashboards/assets/3.0.2.bi.svg
+        subPath: 3.0.2.bi.svg
+      - configMap:
+          name: branding-config-3-0-3
+        name: branding-config-3-0-3
+        path: /usr/share/opensearch-dashboards/assets/3.0.3.bi.svg
+        subPath: 3.0.3.bi.svg
+    service:
+      type: ClusterIP
+    version: 2.18.0
+    opensearchCredentialsSecret:
+      name: opensearch-bi-admin-credentials
+    replicas: 2
+    labels:
+      app.kubernetes.io/instance: opensearch-bi-dashboards
+  general:
+    serviceName: opensearch-bi
+    keystore:
+      - keyMappings:
+          accessKey: s3.client.default.access_key
+          password: s3.client.default.secret_key
+        secret:
+          name: opensearch-bi-snapshot-bucket-credentials
+    monitoring: {}
+    vendor: opensearch
+    httpPort: 9200
+    podSecurityContext:
+      runAsGroup: 1000
+      runAsNonRoot: false
+      runAsUser: 1000
+    snapshotRepositories:
+      - name: s3-default-repository
+        settings:
+          base_path: qa-cicd-pro/opensearch-bi
+          path_style_access: 'true'
+          region: minio
+        type: s3
+      - name: fs-default-repository
+        settings:
+          location: /mnt/snapshots/qa-cicd-pro/opensearch-bi
+        type: fs
+    securityContext:
+      allowPrivilegeEscalation: true
+      privileged: false
+    additionalVolumes:
+      - csi:
+          driver: nfs.csi.k8s.io
+          fsType: ext4
+          readOnly: false
+          volumeAttributes:
+            mountPermissions: '0777'
+            server: arrayop04.tedial.com
+            share: /storage/qa-cicd
+            subDir: backup
+        name: nfs-backups
+        path: /mnt/snapshots
+    version: 2.18.0
+    serviceAccount: opensearch
+    pluginsList:
+      - repository-s3
+  initHelper:
+    resources: {}
+  nodePools:
+    - jvm: '-Xmx4096M -Xms4096M' # La mitad que la memoria del contenedor. Necesito garantizar espacio de cache... Sino el rendto cae!
+      resources:
+        limits:
+          cpu: 1000m # Dispararlo a 8 cores!
+          memory: 6144Mi # (1) Iguales entre si
+        requests:
+          cpu: 500m
+          memory: 4096Mi # (1) 
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node.tedial.com/class
+                    operator: In
+                    values:
+                      - infrastructure
+                  - key: node.tedial.com/class
+                    operator: NotIn
+                    values:
+                      - mediaservices
+                  - key: node.tedial.com/environment
+                    operator: In
+                    values:
+                      - qa-cicd-pro
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: # Prefered
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/instance
+                    operator: In
+                    values:
+                      - opensearch-bi
+              topologyKey: kubernetes.io/hostname
+      additionalConfig:
+        path.repo: /mnt/snapshots/qa-cicd-pro/opensearch-bi
+        plugins.query.datasources.encryption.masterkey: 07c42cd38754087224c5cce5
+      replicas: 3
+      component: masters
+      roles:
+        - cluster_manager
+        - data
+        - ingest
+      diskSize: 64Gi
+      persistence:
+        pvc:
+          accessModes:
+            - ReadWriteOnce
+          storageClass: thin-csi
+      labels:
+        app.kubernetes.io/instance: opensearch-bi
+  security:
+    config:
+      adminCredentialsSecret:
+        name: opensearch-bi-admin-credentials
+      adminSecret:
+        name: opensearch-bi-admin-transport
+      securityConfigSecret:
+        name: opensearch-bi-securityconfig
+      updateJob:
+        resources: {}
+    tls:
+      http:
+        caSecret:
+          name: ''
+        secret:
+          name: opensearch-bi-transport
+      transport:
+        adminDn:
+          - 'CN=adminOpensearch,OU=systems,O=Tedial,L=MALAGA,ST=MALAGA,C=ES'
+        caSecret:
+          name: ''
+        nodesDn:
+          - 'C=ES,ST=MALAGA,L=MALAGA,O=Tedial,OU=systems,CN=opensearch-*'
+          - CN=opensearch-*
+        secret:
+          name: opensearch-bi-transport
+
