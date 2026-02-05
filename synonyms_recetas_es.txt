@@ -1,0 +1,9 @@
+# --- equivalencias (grupo) ---
+patata, patatas, papa, papas
+jamon, jamón, bacon, panceta
+caldo, fumet
+garbanzo, garbanzos, chickpea, chickpeas
+
+# --- mapeos (=>) ---
+tortilla francesa => tortilla de huevo
+alioli => ajoaceite

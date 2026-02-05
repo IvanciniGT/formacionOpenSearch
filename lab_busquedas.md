@@ -228,7 +228,6 @@ PUT _index_template/recetas_search_template
 #     recetas_write => escritura (solo 1 write index activo)
 #     recetas_read  => lectura (puede apuntar a 1 o varios índices)
 # -------------------------------------------------------------------------------------
-
 PUT recetas-search-v1
 {
   "aliases": {
@@ -311,7 +310,7 @@ GET recetas_read/_search
         { "range": { "precio": { "lte": 4.00 } } }
       ],
       "must": [
-        { "match": { "fulltext": "bechamel jamon" } }
+        { "match": { "fulltext": "croqueta" } }
       ],
       "should": [
         { "term": { "tags": "tapa" } }
@@ -319,6 +318,7 @@ GET recetas_read/_search
       "minimum_should_match": 0
     }
   },
+  
 "highlight": {
   "pre_tags": ["<mark>"],
   "post_tags": ["</mark>"],
@@ -402,6 +402,24 @@ GET recetas_read/_search
 # - post_filter: aplica el filtro final SOLO a hits (no a aggs)
 # -------------------------------------------------------------------------------------
 
+
+
+GET recetas_read/_search
+{
+  "size": 10,
+  "_source": ["id","nombre","tags","dificultad","precio"],
+  "query": {
+    "match": {
+      "fulltext": {
+        "query": "croqueta jamon" ,
+        "operator": "OR"
+        
+      }
+    }
+  }
+}
+
+
 GET recetas_read/_search
 {
   "size": 10,
@@ -409,16 +427,16 @@ GET recetas_read/_search
   "query": {
     "bool": {
       "filter": [
-        { "term": { "tenant_id": "globex" } }
+        { "term": { "tenant_id": "acme" } }
       ],
       "must": [
-        { "match": { "fulltext": "marisco" } }
+        { "match": { "fulltext": "croqueta" } }
       ]
     }
   },
   "aggs": {
     "por_tag": {
-      "terms": { "field": "tags", "size": 10 }
+      "terms": { "field": "tags", "size": 5 }
     },
     "por_dificultad": {
       "terms": { "field": "dificultad", "size": 10 }
@@ -435,7 +453,7 @@ GET recetas_read/_search
     }
   },
   "post_filter": {
-    "term": { "dificultad": "dificil" }
+    "term": { "dificultad": "media" }
   }
 }
 
@@ -558,6 +576,45 @@ GET recetas_read/_search
   ]
 }
 
+GET recetas_read/_search
+{
+  "query": {
+      "match_phrase": {
+        "fulltext": {
+          "query": "jamon bechamel",
+          "slop": 2
+        }
+      }
+  }
+}
+
+
+GET recetas_read/_search
+{
+  "query": {
+      "span_near": {
+        "clauses": [
+           {
+             "span_term": {
+               "fulltext": {
+                 "value": "bechamel"
+               }
+             }
+           },
+           {
+             "span_term": {
+               "fulltext": {
+                 "value": "jamon"
+               }
+             }
+           }
+        ],
+          "slop": 2,
+          "in_order": true
+        }
+      }
+      
+  }
 
 
 # -------------------------------------------------------------------------------------
@@ -631,10 +688,10 @@ GET recetas_read/_search
 
 POST recetas_read/_search/point_in_time?keep_alive=2m
 
-GET recetas_read/_search
+GET _search
 {
   "size": 2,
-  "pit": { "id": "PON_AQUI_EL_PIT_ID_DE_LA_RESPUESTA", "keep_alive": "2m" },
+  "pit": { "id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWWl9ERS1yX1hScm0zOHNQazBxY1hlUQEWWmRJRWtwbWFSUHFVcUNzNGtENHV4ZwAAAAAAAAAARhZQUEJlck15aFQ0V1NfVFpMYURPc2VnEXJlY2V0YXMtc2VhcmNoLXYxFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAFkcwSlh0UkRFVGJhWEtYRUJ2SWozX3cAAAAAAAAAAEcWZzRhbVh1amZUMkNCQ2xOTDR1UUJ5ZxFyZWNldGFzLXNlYXJjaC12MRZaX0RFLXJfWFJybTM4c1BrMHFjWGVRAhZaZElFa3BtYVJQcVVxQ3M0a0Q0dXhnAAAAAAAAAABHFlBQQmVyTXloVDRXU19UWkxhRE9zZWcBFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAAA==", "keep_alive": "2m" },
   "sort": [
     { "fecha_creacion": "desc" },
     { "_id": "asc" }
@@ -660,7 +717,7 @@ GET /_search
     }
   },
   "pit": {
-    "id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWTjI2WDNJNkRTOVdnbGJiUlZJcmdQZwIWTHE1bUVUM1JRNjZPSlEyR1BLRjhkdwAAAAAAAAAAMBZCU0VNYkRkcVRiLVJiSnh5aU5Sc093EXJlY2V0YXMtc2VhcmNoLXYxFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcBFk4yNmZVVkp5VF95TXBFb3kzNWtXdlEAAAAAAAAAADQWMkhHY2ZfZ1ZSam0wUERrQlBCX2E5dxFyZWNldGFzLXNlYXJjaC12MRZOMjZYM0k2RFM5V2dsYmJSVklyZ1BnABZOMjZmVVZKeVRfeU1wRW95MzVrV3ZRAAAAAAAAAAA1FjJIR2NmX2dWUmptMFBEa0JQQl9hOXcBFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcAAA==",
+    "id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWWl9ERS1yX1hScm0zOHNQazBxY1hlUQEWWmRJRWtwbWFSUHFVcUNzNGtENHV4ZwAAAAAAAAAARhZQUEJlck15aFQ0V1NfVFpMYURPc2VnEXJlY2V0YXMtc2VhcmNoLXYxFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAFkcwSlh0UkRFVGJhWEtYRUJ2SWozX3cAAAAAAAAAAEcWZzRhbVh1amZUMkNCQ2xOTDR1UUJ5ZxFyZWNldGFzLXNlYXJjaC12MRZaX0RFLXJfWFJybTM4c1BrMHFjWGVRAhZaZElFa3BtYVJQcVVxQ3M0a0Q0dXhnAAAAAAAAAABHFlBQQmVyTXloVDRXU19UWkxhRE9zZWcBFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAAA==",
     "keep_alive": "2m"
   },
   "sort": [
@@ -684,7 +741,7 @@ GET /_search
     }
   },
   "pit": {
-    "id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWTjI2WDNJNkRTOVdnbGJiUlZJcmdQZwIWTHE1bUVUM1JRNjZPSlEyR1BLRjhkdwAAAAAAAAAAMBZCU0VNYkRkcVRiLVJiSnh5aU5Sc093EXJlY2V0YXMtc2VhcmNoLXYxFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcBFk4yNmZVVkp5VF95TXBFb3kzNWtXdlEAAAAAAAAAADQWMkhHY2ZfZ1ZSam0wUERrQlBCX2E5dxFyZWNldGFzLXNlYXJjaC12MRZOMjZYM0k2RFM5V2dsYmJSVklyZ1BnABZOMjZmVVZKeVRfeU1wRW95MzVrV3ZRAAAAAAAAAAA1FjJIR2NmX2dWUmptMFBEa0JQQl9hOXcBFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcAAA==",
+    "id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWWl9ERS1yX1hScm0zOHNQazBxY1hlUQEWWmRJRWtwbWFSUHFVcUNzNGtENHV4ZwAAAAAAAAAARhZQUEJlck15aFQ0V1NfVFpMYURPc2VnEXJlY2V0YXMtc2VhcmNoLXYxFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAFkcwSlh0UkRFVGJhWEtYRUJ2SWozX3cAAAAAAAAAAEcWZzRhbVh1amZUMkNCQ2xOTDR1UUJ5ZxFyZWNldGFzLXNlYXJjaC12MRZaX0RFLXJfWFJybTM4c1BrMHFjWGVRAhZaZElFa3BtYVJQcVVxQ3M0a0Q0dXhnAAAAAAAAAABHFlBQQmVyTXloVDRXU19UWkxhRE9zZWcBFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAAA==",
     "keep_alive": "2m"
   },
   "sort": [
@@ -697,6 +754,45 @@ GET /_search
 
 DELETE _search/point_in_time
 {
-  "pit_id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWTjI2WDNJNkRTOVdnbGJiUlZJcmdQZwIWTHE1bUVUM1JRNjZPSlEyR1BLRjhkdwAAAAAAAAAAMBZCU0VNYkRkcVRiLVJiSnh5aU5Sc093EXJlY2V0YXMtc2VhcmNoLXYxFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcBFk4yNmZVVkp5VF95TXBFb3kzNWtXdlEAAAAAAAAAADQWMkhHY2ZfZ1ZSam0wUERrQlBCX2E5dxFyZWNldGFzLXNlYXJjaC12MRZOMjZYM0k2RFM5V2dsYmJSVklyZ1BnABZOMjZmVVZKeVRfeU1wRW95MzVrV3ZRAAAAAAAAAAA1FjJIR2NmX2dWUmptMFBEa0JQQl9hOXcBFk4yNlgzSTZEUzlXZ2xiYlJWSXJnUGcAAA=="
+  "pit_id": "48a5QQMRcmVjZXRhcy1zZWFyY2gtdjEWWl9ERS1yX1hScm0zOHNQazBxY1hlUQEWWmRJRWtwbWFSUHFVcUNzNGtENHV4ZwAAAAAAAAAARhZQUEJlck15aFQ0V1NfVFpMYURPc2VnEXJlY2V0YXMtc2VhcmNoLXYxFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAFkcwSlh0UkRFVGJhWEtYRUJ2SWozX3cAAAAAAAAAAEcWZzRhbVh1amZUMkNCQ2xOTDR1UUJ5ZxFyZWNldGFzLXNlYXJjaC12MRZaX0RFLXJfWFJybTM4c1BrMHFjWGVRAhZaZElFa3BtYVJQcVVxQ3M0a0Q0dXhnAAAAAAAAAABHFlBQQmVyTXloVDRXU19UWkxhRE9zZWcBFlpfREUtcl9YUnJtMzhzUGswcWNYZVEAAA=="
 }
+
+# Paginacion. Opcion 1. Paginación tradicional
+GET recetas_read/_search
+{
+  "from": 2,
+  "size": 2,
+  "query": {
+    "match_all": {}
+  },
+  "sort": {
+    "_score": "desc"
+  }
+  
+}
+# Paginación estandar.. Pagina 1 de 20... con 20 por página
+# Problemas: 
+# Problemas de coherencia de datos en el tiempo... me puedo saltar datos o verlos repetidos en distintas paginas
+# Rendimiento. Para offsets altos le cuesta la vida ya que los coordinadores deben ordenar más datos (O(nlog(n)))
+# Limitado al max_result_window.l.. más de eso no cuela... precisamente para evitar tumbar la máquina.
+
+GET recetas_read
+
+
+# Paginacion. Opcion 2. Paginación scroll infinito. Menor coste computacional que la otra:
+# PIT. Este lo que pasa es que guarda los resultados en ram... durante el periodo de vida.
+# Es determinista: no pierde datos, ni duplica
+# Va como un tiro... la búsqueda es una vez
+GET recetas_read/_search
+{
+  "size": 2,
+  "query": {
+    "match_all": {}
+  },
+  "sort": {
+    "_score": "desc"
+  }
+  
+} 
+# Este opera con campos de saort, como el pit
 
